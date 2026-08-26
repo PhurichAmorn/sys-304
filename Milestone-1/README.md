@@ -1,4 +1,5 @@
-# Milestone 1: Disaster Tweet Classification
+# Milestone 1: Prototype
+Disaster Tweet Classification
 
 ## Problem
 Binary text classification: given a tweet, predict whether it describes a
