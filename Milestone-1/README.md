@@ -23,3 +23,6 @@ reports from unrelated tweets that just use disaster-like language
   Logistic Regression.
 - Compared against a few-shot LLM classifier (Ollama) on a sample for
   reference.
+
+## Demo
+<video src="https://github.com/user-attachments/assets/802ae81b-e48a-428d-9098-a01573899e57" controls></video>

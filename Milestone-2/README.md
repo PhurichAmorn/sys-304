@@ -65,3 +65,6 @@ label formatting).
 
 `.github/workflows/ci.yml` runs on every push/PR to `main`: installs
 dependencies, lints the backend with `ruff`, runs both test suites.
+
+## Demo
+<video src="https://github.com/user-attachments/assets/30d6ea27-392b-4424-a3df-94f959630599" controls></video>
