@@ -39,6 +39,7 @@ def run_worker(mode, texts_path):
         [sys.executable, __file__, "--worker", mode, "--texts", texts_path],
         capture_output=True,
         text=True,
+        check=False,
     )
     if proc.returncode != 0:
         raise RuntimeError(f"{mode} worker failed:\n{proc.stderr}")
