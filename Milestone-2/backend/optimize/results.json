@@ -1,0 +1,35 @@
+[
+  {
+    "mode": "naive",
+    "n_requests": 500,
+    "load_time_s": 0.1049,
+    "total_time_s": 0.0586,
+    "avg_latency_ms": 0.1171,
+    "throughput_qps": 8537.8,
+    "rss_after_load_mb": 173.44,
+    "size_kb": 227.5,
+    "accuracy": 0.856
+  },
+  {
+    "mode": "onnx_fp32",
+    "n_requests": 500,
+    "load_time_s": 0.0594,
+    "total_time_s": 0.0303,
+    "avg_latency_ms": 0.0607,
+    "throughput_qps": 16484.3,
+    "rss_after_load_mb": 183.28,
+    "size_kb": 160.1,
+    "accuracy": 0.858
+  },
+  {
+    "mode": "onnx_int8",
+    "n_requests": 500,
+    "load_time_s": 0.0237,
+    "total_time_s": 0.0286,
+    "avg_latency_ms": 0.0571,
+    "throughput_qps": 17507.0,
+    "rss_after_load_mb": 183.12,
+    "size_kb": 160.4,
+    "accuracy": 0.858
+  }
+]
