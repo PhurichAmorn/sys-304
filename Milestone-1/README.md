@@ -25,4 +25,4 @@ reports from unrelated tweets that just use disaster-like language
   reference.
 
 ## Demo
-<video src="https://github.com/user-attachments/assets/802ae81b-e48a-428d-9098-a01573899e57" controls></video>
+<video src="https://github.com/user-attachments/assets/1b22686d-9ba1-4506-8c36-3de37a175c4a3899e57" controls></video>
