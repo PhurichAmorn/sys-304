@@ -128,4 +128,8 @@ Full numbers in `optimize/results.json`.
   size; it wouldn't for a model large enough to actually stress memory.
 
 ## Demo
-<video src="https://github.com/user-attachments/assets/30d6ea27-392b-4424-a3df-94f959630599" controls></video>
+
+
+https://github.com/user-attachments/assets/f627b451-f586-49e9-860b-9dafcece695e
+
+
