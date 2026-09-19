@@ -1,0 +1,31 @@
+{
+  "naive_unique": {
+    "n_requests": 300,
+    "concurrency": 30,
+    "wall_s": 0.278,
+    "throughput_rps": 1079.5,
+    "avg_latency_ms": 25.85,
+    "p50_latency_ms": 25.64,
+    "p95_latency_ms": 32.66
+  },
+  "optimized_unique": {
+    "n_requests": 300,
+    "concurrency": 30,
+    "wall_s": 0.171,
+    "throughput_rps": 1759.0,
+    "avg_latency_ms": 15.27,
+    "p50_latency_ms": 8.77,
+    "p95_latency_ms": 82.05
+  },
+  "optimized_repeated": {
+    "n_requests": 300,
+    "concurrency": 30,
+    "wall_s": 0.094,
+    "throughput_rps": 3177.2,
+    "avg_latency_ms": 9.0,
+    "p50_latency_ms": 8.52,
+    "p95_latency_ms": 15.41
+  },
+  "naive_mem_mb": 119.3,
+  "optimized_mem_mb": 492.9
+}
