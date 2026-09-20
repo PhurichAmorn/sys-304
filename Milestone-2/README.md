@@ -227,20 +227,6 @@ xychart-beta
     bar [119.3, 492.9]
 ```
 
-**Takeaways:**
-- Concurrency alone (unique text, cache always misses) already gets ~1.6x
-  throughput and ~1.7x lower average latency: 4 worker processes on 4 cores
-  beat 1 process under concurrent load, exactly as expected from the
-  worker-count change and nothing else.
-- Caching stacks on top: repeated text pushes throughput to ~2.9x naive
-  and average latency down to ~9ms, since cached requests skip the
-  vectorizer/model entirely and only pay a Redis round trip.
-- p95 for "optimized, unique" is noisy (82ms) — a `ThreadPoolExecutor` with
-  concurrency 30 on a `--n 300` run has few tail samples, so a couple of
-  slow first-hit requests move the p95 a lot. Not a regression: p50 (8.77ms)
-  and throughput both improve over naive.
-- Eventhough it cost 4 times more memory usage, the usage is still minimal since the model is small.
-
 ## Demo
 
 
