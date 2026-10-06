@@ -1,6 +1,5 @@
-from fastapi.testclient import TestClient
-
 from app import app
+from fastapi.testclient import TestClient
 
 
 def test_predict_returns_200_on_valid_input():

@@ -1,4 +1,44 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_DB: predictions
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d predictions"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  adminer:
+    image: adminer:4
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   redis:
     image: redis:alpine
     healthcheck:
@@ -8,19 +48,67 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
     environment:
       REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/predictions
+      MODEL_ROOT: /models
+      MODEL_POLL_SECONDS: ${MODEL_POLL_SECONDS:-5}
+    volumes:
+      - model_store:/models
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  retrainer:
+    build:
+      context: ..
+      dockerfile: Milestone-2/retrainer/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/predictions
+      MODEL_ROOT: /models
+      RETRAINING_AUTO_DEPLOY: ${RETRAINING_AUTO_DEPLOY:-true}
+      RETRAINING_BATCH_SIZE: 100
+      RETRAINING_MINIMUM_ROWS: 100
+      RETRAINING_CONFIDENCE_THRESHOLD: ${RETRAINING_CONFIDENCE_THRESHOLD:-0.65}
+      RETRAINING_LABEL_CONFIDENCE: ${RETRAINING_LABEL_CONFIDENCE:-0.75}
+      RETRAINING_POLL_SECONDS: ${RETRAINING_POLL_SECONDS:-10}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:0.5b}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-30}
+    volumes:
+      - retraining_state:/state
+      - model_store:/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  drift-monitor:
+    build:
+      context: ..
+      dockerfile: Milestone-2/retrainer/Dockerfile
+    command: ["python", "drift_monitor.py"]
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/predictions
+      DRIFT_POLL_SECONDS: ${DRIFT_POLL_SECONDS:-30}
+      DRIFT_WINDOW_SIZE: ${DRIFT_WINDOW_SIZE:-500}
+      DRIFT_MINIMUM_ROWS: ${DRIFT_MINIMUM_ROWS:-100}
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
@@ -29,3 +117,9 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+volumes:
+  postgres_data:
+  grafana_data:
+  retraining_state:
+  model_store:

@@ -1,5 +1,5 @@
 """Benchmark: sends a batch of requests through the naive (joblib) model and
-the optimized (ONNX FP32 / ONNX INT8) models, comparing inference time,
+the optimized (ONNX FP32) model, comparing inference time,
 memory footprint, on-disk size, and accuracy.
 
 Each mode runs in its own subprocess so memory measurements aren't polluted
@@ -20,7 +20,7 @@ import pandas as pd
 import psutil
 from sklearn.model_selection import train_test_split
 
-MODES = ["naive", "onnx_fp32", "onnx_int8"]
+MODES = ["naive", "onnx_fp32"]
 TRAIN_CSV = "../../Milestone-1/nlp-getting-started/train.csv"
 
 
@@ -69,7 +69,7 @@ def worker_main(mode, texts_path):
         import numpy as np
         import onnxruntime as rt
 
-        onnx_path = f"optimize/model_{'fp32' if mode == 'onnx_fp32' else 'int8'}.onnx"
+        onnx_path = "../model/model_fp32.onnx"
         sess = rt.InferenceSession(onnx_path)
         size_bytes = os.path.getsize(onnx_path)
 
@@ -116,9 +116,8 @@ def main():
         worker_main(args.worker, args.texts)
         return
 
-    for path in ("optimize/model_fp32.onnx", "optimize/model_int8.onnx"):
-        if not os.path.exists(path):
-            sys.exit(f"missing {path} — run optimize/export_onnx.py first")
+    if not os.path.exists("../model/model_fp32.onnx"):
+        sys.exit("missing ../model/model_fp32.onnx — run optimize/export_onnx.py first")
 
     texts, labels = load_eval_split(args.n)
     texts_path = "optimize/_bench_input.json"

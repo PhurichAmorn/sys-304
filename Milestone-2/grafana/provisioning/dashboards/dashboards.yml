@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Milestone 2 dashboards
+    orgId: 1
+    folder: Milestone 2
+    type: file
+    disableDeletion: true
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

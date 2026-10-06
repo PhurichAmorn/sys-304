@@ -1,0 +1,953 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "Requests per minute",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(created_at, '1m'), COUNT(*) AS requests FROM request_logs WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 2,
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "title": "Average latency",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(created_at, '1m'), AVG(latency_ms) AS avg_latency_ms FROM request_logs WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "title": "Error rate",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT COALESCE(100.0 * AVG(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END), 0) AS error_rate FROM request_logs WHERE $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 8
+      },
+      "id": 4,
+      "title": "Redis cache-hit rate",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT COALESCE(100.0 * AVG(CASE WHEN cache_hit THEN 1 ELSE 0 END), 0) AS cache_hit_rate FROM request_logs WHERE $__timeFilter(created_at) AND path = '/predict'",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 8
+      },
+      "id": 5,
+      "title": "Prediction distribution",
+      "type": "barchart",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT NOW() AS time, COUNT(*) FILTER (WHERE prediction = 1)::double precision AS \"Disaster\", COUNT(*) FILTER (WHERE prediction = 0)::double precision AS \"Non-disaster\" FROM request_logs WHERE $__timeFilter(created_at) AND path = '/predict'",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal",
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 6,
+      "title": "HTTP status codes",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(created_at, '1m'), status_code::text AS metric, COUNT(*) AS requests FROM request_logs WHERE $__timeFilter(created_at) GROUP BY 1, 2 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 7,
+      "title": "Recent errors",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT created_at, request_id, path, status_code, latency_ms, error_message FROM request_logs WHERE $__timeFilter(created_at) AND status_code >= 400 ORDER BY created_at DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "footer": {
+          "show": false
+        },
+        "showHeader": true
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 3,
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 8,
+      "title": "Prediction probability and confidence",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT created_at AS time, probability AS \"Disaster probability\", GREATEST(probability, 1 - probability) AS \"Confidence\" FROM request_logs WHERE $__timeFilter(created_at) AND path = '/predict' AND status_code = 200 AND probability IS NOT NULL ORDER BY created_at",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 40
+      },
+      "id": 9,
+      "title": "Latest retraining decision",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT CASE WHEN retraining_needed THEN 1 ELSE 0 END AS retraining_needed FROM retraining_cycles ORDER BY checked_at DESC LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 3,
+          "min": 0,
+          "max": 1,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 16,
+        "x": 8,
+        "y": 40
+      },
+      "id": 10,
+      "title": "Retraining confidence checks",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT checked_at AS time, average_confidence AS \"Average confidence\", confidence_threshold AS \"Trigger threshold\" FROM retraining_cycles WHERE $__timeFilter(checked_at) ORDER BY checked_at",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 11,
+      "title": "Retraining history",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT checked_at, sample_count, ROUND(average_confidence::numeric, 3) AS average_confidence, ROUND(confidence_threshold::numeric, 3) AS threshold, retraining_needed, reason, accepted_labels, deployed FROM retraining_cycles WHERE $__timeFilter(checked_at) ORDER BY checked_at DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "footer": {
+          "show": false
+        },
+        "showHeader": true
+      }
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "none",
+          "custom": {
+            "thresholdsStyle": {
+              "mode": "dashed"
+            },
+            "thresholds": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.1
+              },
+              {
+                "color": "red",
+                "value": 0.25
+              }
+            ]
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.1
+              },
+              {
+                "color": "red",
+                "value": 0.25
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 30
+      },
+      "id": 20,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT checked_at AS time, psi_overall AS \"Population Stability Index\" FROM drift_checks WHERE $__timeFilter(checked_at) AND psi_overall IS NOT NULL ORDER BY checked_at",
+          "refId": "A"
+        }
+      ],
+      "title": "Data drift: PSI vs training baseline",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 30
+      },
+      "id": 21,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT psi_verdict AS verdict FROM drift_checks ORDER BY checked_at DESC LIMIT 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Latest drift verdict",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 30
+      },
+      "id": 22,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT checked_at AS time, js_divergence AS \"JS distance\" FROM drift_checks WHERE $__timeFilter(checked_at) AND js_divergence IS NOT NULL ORDER BY checked_at",
+          "refId": "A"
+        }
+      ],
+      "title": "Jensen-Shannon distance (trend)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 38
+      },
+      "id": 23,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT checked_at AS time, oov_rate AS \"Unseen word rate\" FROM drift_checks WHERE $__timeFilter(checked_at) AND oov_rate IS NOT NULL ORDER BY checked_at",
+          "refId": "A"
+        }
+      ],
+      "title": "Out-of-vocabulary rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 38
+      },
+      "id": 24,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT checked_at AS time, length_ks_statistic AS \"KS statistic\" FROM drift_checks WHERE $__timeFilter(checked_at) AND length_ks_statistic IS NOT NULL ORDER BY checked_at",
+          "refId": "A"
+        }
+      ],
+      "title": "Text length shift (KS statistic)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 38
+      },
+      "id": 25,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT checked_at AS time, live_positive_rate AS \"Live\", reference_positive_rate AS \"Training baseline\" FROM drift_checks WHERE $__timeFilter(checked_at) ORDER BY checked_at",
+          "refId": "A"
+        }
+      ],
+      "title": "Live vs training positive rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 8,
+        "x": 0,
+        "y": 42
+      },
+      "id": 26,
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT COALESCE((SELECT version FROM model_versions WHERE active = TRUE ORDER BY promoted_at DESC LIMIT 1), (SELECT model_version FROM request_logs WHERE model_version IS NOT NULL ORDER BY created_at DESC LIMIT 1)) AS \"Serving model\"",
+          "refId": "A"
+        }
+      ],
+      "title": "Live model version",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 16,
+        "x": 8,
+        "y": 42
+      },
+      "id": 27,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT version, promoted_at, source, active, rolled_back_at, accuracy, f1, disaster_recall, accepted_labels, model_version_before FROM model_versions ORDER BY promoted_at DESC LIMIT 20",
+          "refId": "A"
+        }
+      ],
+      "title": "Model version history",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 3,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "id": 28,
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "table",
+          "rawSql": "SELECT feature ->> 'feature' AS feature, ROUND((feature ->> 'psi_contribution')::numeric, 4) AS psi_contribution, ROUND((feature ->> 'reference_share')::numeric, 6) AS training_share, ROUND((feature ->> 'live_share')::numeric, 6) AS live_share FROM (SELECT top_features FROM drift_checks WHERE top_features IS NOT NULL ORDER BY checked_at DESC LIMIT 1) latest, LATERAL jsonb_array_elements(latest.top_features) AS feature ORDER BY (feature ->> 'psi_contribution')::numeric DESC",
+          "refId": "A"
+        }
+      ],
+      "title": "Top shifted features (latest check)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "prediction-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "decimals": 0,
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "id": 29,
+      "options": {},
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "prediction-postgres"
+          },
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(created_at, '1m'), model_version AS metric, COUNT(*) AS requests FROM request_logs WHERE $__timeFilter(created_at) AND model_version IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Requests by serving model version",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "milestone-2",
+    "observability",
+    "predictions"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Milestone 2 Request Monitoring",
+  "uid": "milestone-2-monitoring",
+  "version": 1
+}

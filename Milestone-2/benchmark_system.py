@@ -41,11 +41,9 @@ def predict(base_url, text):
 
 
 def load_test(base_url, texts):
-    latencies = []
     t0 = time.perf_counter()
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONCURRENCY) as pool:
-        for lat in pool.map(lambda t: predict(base_url, t), texts):
-            latencies.append(lat)
+        latencies = list(pool.map(lambda t: predict(base_url, t), texts))
     wall_s = time.perf_counter() - t0
 
     latencies_ms = sorted(l * 1000 for l in latencies)
