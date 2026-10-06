@@ -4,3 +4,8 @@ __pycache__/
 .ruff_cache/
 node_modules/
 *.mov
+*.pdf
+
+# Drift baseline, rebuilt from Milestone-1 train.csv by build_drift_reference.py
+Milestone-2/artifacts/
+Milestone-2/models/

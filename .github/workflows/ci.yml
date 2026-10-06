@@ -18,7 +18,8 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements-dev.txt
-      - run: ruff check .
+      - run: ruff check backend
+        working-directory: Milestone-2
       - run: pytest -q
 
   frontend:
@@ -32,3 +33,20 @@ jobs:
         with:
           node-version: "20"
       - run: node --test
+
+  # Milestone 4: monitoring, drift, and the retraining pipeline live outside
+  # backend/, so they need their own job to be covered at all.
+  pipeline:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Milestone-2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r backend/requirements-dev.txt pytest
+      - run: pip install scipy skl2onnx
+      - run: ruff check backend *.py tests
+      - run: pytest -q tests
