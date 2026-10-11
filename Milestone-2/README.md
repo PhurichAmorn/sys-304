@@ -30,7 +30,7 @@ Milestone-2/
     app.js                fetch/formatting logic (testable, no DOM)
     tests/                node:test integration tests
     Dockerfile
-  drift.py               drift metrics: PSI, JS distance, OOV rate, length KS
+  drift.py               drift metrics: PSI, OOV rate, length KS
   build_drift_reference.py   freezes the train.csv distribution as the drift baseline
   drift_monitor.py       periodic drift checks, writes to drift_checks
   model_control.py       status / list / rollback for the live model version
@@ -142,8 +142,8 @@ Password: admin
 - latest retraining decision and confidence trigger history;
 - recent failed requests and error messages;
 - **data drift: PSI against the training baseline, with 0.1 / 0.25 threshold
-  lines, plus the latest verdict, JS distance, OOV rate, length shift, live vs
-  training positive rate, and the top shifted features**;
+  lines and the latest verdict, plus OOV rate, text-length KS statistic, live
+  vs training positive rate, and top shifted features**;
 - **the live model version, its promotion history with metrics, and request
   volume split by serving version**.
 
@@ -352,23 +352,24 @@ python build_drift_reference.py \
 
 The reference is independent of the served model, so promoting a new model does
 not redefine the baseline. Grafana compares each live window with the frozen
-training data. The signals answer different questions:
+training data. PSI is the dashboard's overall drift score; the other panels are
+supporting signals. Jensen–Shannon distance is not collected or displayed.
+The signals answer different questions:
 
 | Dashboard signal | What it measures | How to read it |
 |---|---|---|
 | **PSI and verdict** | Overall change in TF-IDF feature mass. This implementation groups the 5,000 features into ten buckets based on their training frequency, then compares bucket shares. | This is the dashboard's thresholded summary: **below 0.1** stable, **0.1–0.25** moderate, **above 0.25** significant. These are alert heuristics; investigate sustained or rising values. |
-| **Jensen–Shannon (JS) distance** | Difference between the full training and live TF-IDF frequency distributions. It ranges from **0** (identical) to **1** (maximally different). | Treat it as a trend, not a pass/fail score. With this sparse 5,000-feature text representation, same-domain windows have measured around **0.40** from sampling noise; strongly off-domain windows can approach **0.99**. Compare similarly sized windows over time. A rising distance suggests the vocabulary mix is changing broadly. |
-| **OOV rate** | Share of live word tokens that do not appear in the training text vocabulary. It counts individual words, not word pairs. | **0.10** means roughly 10% of tokens are unseen. A higher or rising rate means more incoming language falls outside what training data covered. Some unseen words are normal, so use it with the other signals. |
-| **Text length KS statistic** | Largest gap between the training and live cumulative distributions of character counts, using the two-sample Kolmogorov–Smirnov statistic. | It ranges from **0** (similar length distributions) toward **1** (large separation). Near 0 means lengths look similar; a rising value means texts are shifting shorter or longer. |
-| **Live vs training positive rate** | The share of live predictions classified as disaster compared with the positive-label share in the original training data. | A gap signals that the model's output mix changed. Since live requests have no ground-truth labels, this is not an accuracy or error-rate measure by itself. |
+| **OOV rate** | Share of live word tokens that do not appear in the training text vocabulary. It checks individual words, not whole posts or word pairs. | **0.10** means roughly 10% of tokens are unseen. A higher or rising rate means more incoming language falls outside what training data covered. Some unseen words are normal, so use it with the other signals. |
+| **Text length KS statistic** | Largest gap between the training and live cumulative distributions of character counts, using the two-sample Kolmogorov–Smirnov statistic. It compares the distributions, not just their average lengths. | It ranges from **0** (similar length distributions) toward **1** (large separation). Near 0 means lengths look similar; a rising value means posts are shifting shorter or longer. |
+| **Live vs training positive rate** | The share of recent posts the model predicts as disaster-related, compared with the share labeled disaster-related in the original training data. | For example, **70% live vs 40% training** means the model is labeling a larger share of recent posts as disasters. This may reflect changed traffic or model behavior; without live ground-truth labels, it does not measure accuracy. |
 | **Top shifted features** | Words or phrases with the largest per-feature PSI contribution between the training and live windows. | Use these as clues about what changed (for example, new place names or event terms). They are examples to investigate, not proof that one term caused model errors. |
 
-For example, a PSI verdict of **stable** with a JS distance around **0.40** and
-a modest OOV rate can be consistent with ordinary same-domain traffic. A JS
-distance near **0.99** together with high OOV and a significant PSI verdict is
-stronger evidence that the text has moved well outside the training language.
-The drift dashboard describes changes in inputs and predictions; it cannot tell
-whether the model is less accurate without ground-truth labels.
+For example, a PSI verdict of **stable** with a modest OOV rate can be consistent
+with ordinary same-domain traffic. A significant PSI verdict together with a
+high OOV rate is stronger evidence that the text has moved well outside the
+training language. The drift dashboard describes changes in inputs and
+predictions; it cannot tell whether the model is less accurate without
+ground-truth labels.
 
 ## Verification
 
@@ -501,8 +502,8 @@ reports the model version currently loaded by the API.
 7. Each API worker polls `current.json` every `MODEL_POLL_SECONDS` and swaps its
    own ONNX session, without restarting or dropping requests.
 
-The drift monitor runs separately and only observes. It computes PSI, JS
-divergence, OOV rate, and a length KS test over a recent window, then writes the
+The drift monitor runs separately and only observes. It computes PSI, OOV rate,
+and a length KS test over a recent window, then writes the
 result to PostgreSQL for Grafana. It does not trigger retraining.
 
 The four API workers provide process-level concurrency, Redis reduces repeated

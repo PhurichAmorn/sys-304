@@ -137,7 +137,7 @@ def test_compute_drift_handles_live_text_without_known_features():
 
     assert report["psi_overall"] is None
     assert report["psi_verdict"] == "unknown"
-    assert report["js_divergence"] is None
+    assert "js_divergence" not in report
     assert report["oov_rate"] == 1.0
 
 

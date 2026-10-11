@@ -652,40 +652,6 @@
       "fieldConfig": {
         "defaults": {
           "decimals": 3,
-          "unit": "none"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 30
-      },
-      "id": 22,
-      "options": {},
-      "targets": [
-        {
-          "datasource": {
-            "type": "postgres",
-            "uid": "prediction-postgres"
-          },
-          "format": "time_series",
-          "rawSql": "SELECT checked_at AS time, js_divergence AS \"JS distance\" FROM drift_checks WHERE $__timeFilter(checked_at) AND js_divergence IS NOT NULL ORDER BY checked_at",
-          "refId": "A"
-        }
-      ],
-      "title": "Jensen-Shannon distance (trend)",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "prediction-postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 3,
           "unit": "percentunit"
         },
         "overrides": []

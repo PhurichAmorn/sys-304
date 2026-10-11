@@ -78,7 +78,6 @@ CREATE TABLE IF NOT EXISTS drift_checks (
     window_size INTEGER NOT NULL,
     psi_overall DOUBLE PRECISION,
     psi_verdict TEXT,
-    js_divergence DOUBLE PRECISION,
     oov_rate DOUBLE PRECISION,
     length_ks_statistic DOUBLE PRECISION,
     length_ks_pvalue DOUBLE PRECISION,
@@ -176,7 +175,6 @@ def log_drift_check(
     window_size: int,
     psi_overall: float | None = None,
     psi_verdict: str | None = None,
-    js_divergence: float | None = None,
     oov_rate: float | None = None,
     length_ks_statistic: float | None = None,
     length_ks_pvalue: float | None = None,
@@ -192,13 +190,13 @@ def log_drift_check(
             connection.execute(
                 """
                 INSERT INTO drift_checks (
-                    window_size, psi_overall, psi_verdict, js_divergence,
+                    window_size, psi_overall, psi_verdict,
                     oov_rate, length_ks_statistic, length_ks_pvalue,
                     mean_confidence, live_positive_rate, reference_positive_rate,
                     top_features, error_message
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
-                (window_size, psi_overall, psi_verdict, js_divergence, oov_rate,
+                (window_size, psi_overall, psi_verdict, oov_rate,
                  length_ks_statistic, length_ks_pvalue, mean_confidence,
                  live_positive_rate, reference_positive_rate, top_features,
                  error_message),

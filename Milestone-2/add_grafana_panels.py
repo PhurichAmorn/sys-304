@@ -76,15 +76,6 @@ def build_panels():
             },
         ),
         panel(
-            22,
-            "Jensen-Shannon distance (trend)",
-            "timeseries",
-            "SELECT checked_at AS time, js_divergence AS \"JS distance\" "
-            "FROM drift_checks WHERE $__timeFilter(checked_at) AND js_divergence IS NOT NULL "
-            "ORDER BY checked_at",
-            {"h": 4, "w": 6, "x": 18, "y": 30},
-        ),
-        panel(
             23,
             "Out-of-vocabulary rate",
             "timeseries",

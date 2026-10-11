@@ -67,7 +67,6 @@ def run_check(reference, window, database_url):
         window_size=report["window_size"],
         psi_overall=report["psi_overall"],
         psi_verdict=report["psi_verdict"],
-        js_divergence=report["js_divergence"],
         oov_rate=report["oov_rate"],
         length_ks_statistic=report["length_ks_statistic"],
         length_ks_pvalue=report["length_ks_pvalue"],

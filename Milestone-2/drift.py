@@ -9,12 +9,6 @@ Four complementary views, cheapest first:
 - **PSI** over per-feature TF-IDF mass, bucketed into equal-count groups by
   reference mass. The headline number and the only thresholded verdict:
   <0.1 stable, 0.1-0.25 moderate, >0.25 significant.
-- **Jensen-Shannon distance** between the aggregate TF-IDF distributions. Used
-  as a trend indicator only. At 5000 sparse dimensions it sits around 0.40 even
-  for data drawn from the identical distribution, because finite-sample noise
-  alone produces that much divergence, so it is not compared against a
-  threshold. Its value is in the movement: 0.40 same-domain against 0.99
-  off-domain.
 - **OOV rate**: share of live words absent from the training vocabulary. The
   most explainable signal, and the one to quote when someone asks why.
 - **Length shift** via a two-sample Kolmogorov-Smirnov test on character counts.
@@ -79,17 +73,6 @@ def classify_psi(value):
     if value < PSI_SIGNIFICANT:
         return "moderate"
     return "significant"
-
-
-def jensen_shannon_distance(reference_freq, live_freq):
-    """Jensen-Shannon distance (sqrt of the divergence, base 2) in [0, 1]."""
-    from scipy.spatial.distance import jensenshannon
-
-    reference = _as_proportions(reference_freq)
-    live = _as_proportions(live_freq)
-    if reference.sum() <= 0 or live.sum() <= 0:
-        return None
-    return float(jensenshannon(reference, live, base=2))
 
 
 def out_of_vocabulary_rate(known_tokens, texts, analyzer=None):
@@ -189,7 +172,6 @@ def compute_drift(reference, texts, probabilities):
             "window_size": 0,
             "psi_overall": None,
             "psi_verdict": "unknown",
-            "js_divergence": None,
             "oov_rate": None,
             "length_ks_statistic": None,
             "length_ks_pvalue": None,
@@ -204,7 +186,6 @@ def compute_drift(reference, texts, probabilities):
     reference_frequency = reference["feature_frequency"]
 
     psi = population_stability_index(reference_frequency, live_frequency)
-    js_divergence = jensen_shannon_distance(reference_frequency, live_frequency)
     oov_rate = out_of_vocabulary_rate(reference["vocabulary"], texts)
     live_lengths = [len(text) for text in texts]
     ks_statistic, ks_pvalue = length_shift(reference["char_lengths"], live_lengths)
@@ -213,11 +194,6 @@ def compute_drift(reference, texts, probabilities):
         "window_size": len(texts),
         "psi_overall": round(psi, 6) if psi is not None else None,
         "psi_verdict": classify_psi(psi),
-        "js_divergence": (
-            round(js_divergence, 6)
-            if js_divergence is not None
-            else None
-        ),
         "oov_rate": round(oov_rate, 6) if oov_rate is not None else None,
         "length_ks_statistic": round(ks_statistic, 6) if ks_statistic is not None else None,
         "length_ks_pvalue": round(ks_pvalue, 6) if ks_pvalue is not None else None,
