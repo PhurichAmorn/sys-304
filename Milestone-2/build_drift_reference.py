@@ -14,7 +14,7 @@ promotion cannot quietly redefine the baseline and hide ongoing drift.
 import argparse
 import csv
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import joblib
@@ -52,7 +52,7 @@ def main():
     )
     vectorizer.fit(texts)
     reference = build_reference(texts, labels, vectorizer)
-    reference["built_at"] = datetime.now(timezone.utc).isoformat()
+    reference["built_at"] = datetime.now(UTC).isoformat()
     reference["source"] = str(args.training_data)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -14,7 +14,7 @@ Examples:
 import argparse
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import psycopg
@@ -25,7 +25,7 @@ DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/prediction
 def parse_timestamp(value):
     timestamp = datetime.fromisoformat(value)
     if timestamp.tzinfo is None:
-        timestamp = timestamp.replace(tzinfo=timezone.utc)
+        timestamp = timestamp.replace(tzinfo=UTC)
     return timestamp
 
 
@@ -39,7 +39,7 @@ def model_updated_at(model_root, fallback_model_path):
                 return parse_timestamp(promoted_at)
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
             pass
-    return datetime.fromtimestamp(Path(fallback_model_path).stat().st_mtime, tz=timezone.utc)
+    return datetime.fromtimestamp(Path(fallback_model_path).stat().st_mtime, tz=UTC)
 
 
 def recent_confidence(database_url, window_size):
@@ -67,7 +67,7 @@ def evaluate_trigger(
     confidence_threshold,
     window_size,
 ):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     average_confidence, sample_count = recent_confidence(database_url, window_size)
     time_due = now - last_trained_at >= timedelta(hours=interval_hours)
     confidence_drop = (

@@ -20,7 +20,7 @@ import os
 import shutil
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import psycopg
@@ -223,7 +223,7 @@ def run_cycle(args):
     trigger = trigger_decision(rows, args.confidence_threshold, args.minimum_rows)
     report = {
         "cycle": "confidence-triggered-simulation",
-        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "checked_at": datetime.now(UTC).isoformat(),
         "trigger": trigger,
         "deployed": False,
     }
