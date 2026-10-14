@@ -20,7 +20,7 @@ import pandas as pd
 import psutil
 from sklearn.model_selection import train_test_split
 
-MODES = ["naive", "onnx_fp32"]
+MODES = ["naive", "onnx_fp32", "onnx_int8"]
 TRAIN_CSV = "../../Milestone-1/nlp-getting-started/train.csv"
 
 
@@ -69,7 +69,8 @@ def worker_main(mode, texts_path):
         import numpy as np
         import onnxruntime as rt
 
-        onnx_path = "../model/model_fp32.onnx"
+        onnx_path = ("optimize/model_int8.onnx" if mode == "onnx_int8"
+                     else "../model/model_fp32.onnx")
         sess = rt.InferenceSession(onnx_path)
         size_bytes = os.path.getsize(onnx_path)
 
@@ -108,6 +109,8 @@ def worker_main(mode, texts_path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, default=500, help="number of requests to send")
+    parser.add_argument("--include-int8", action="store_true",
+                        help="also benchmark optimize/model_int8.onnx")
     parser.add_argument("--worker", choices=MODES, help=argparse.SUPPRESS)
     parser.add_argument("--texts", help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -124,7 +127,8 @@ def main():
     with open(texts_path, "w") as f:
         json.dump({"texts": texts, "labels": labels}, f)
 
-    results = [run_worker(mode, texts_path) for mode in MODES]
+    modes = MODES if args.include_int8 else MODES[:2]
+    results = [run_worker(mode, texts_path) for mode in modes]
     os.remove(texts_path)
 
     header = ["mode", "n_requests", "avg_latency_ms", "throughput_qps", "rss_after_load_mb", "size_kb", "accuracy"]
@@ -134,9 +138,10 @@ def main():
     for r in results:
         print(" | ".join(str(r[h]).ljust(col_w[h]) for h in header))
 
-    with open("optimize/results.json", "w") as f:
+    results_path = "optimize/results_int8.json" if args.include_int8 else "optimize/results.json"
+    with open(results_path, "w") as f:
         json.dump(results, f, indent=2)
-    print("\nwrote optimize/results.json")
+    print(f"\nwrote {results_path}")
 
 
 if __name__ == "__main__":

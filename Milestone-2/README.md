@@ -19,8 +19,11 @@ Milestone-2/
     requirements-optimize.txt skl2onnx, onnx, onnxruntime, psutil, pandas
     optimize/
       export_onnx.py    exports the pipeline to ONNX FP32
-      benchmark.py      naive (joblib) vs ONNX FP32: latency, memory, size, accuracy
+      export_int8.py    exports the classifier to INT8
+      model_int8.onnx   quantized classifier with FP32 text preprocessing
+      benchmark.py      naive vs ONNX FP32 and optional INT8 comparison
       results.json      generated benchmark output
+      results_int8.json generated comparison including INT8
     tests/              unit + integration tests
     Dockerfile
   model/
@@ -403,7 +406,9 @@ previously uncovered.
    inference runs through `onnxruntime` instead of sklearn's Python path.
 
 The API serves and the retraining pipeline promotes this FP32 ONNX model. The
-benchmark compares it with the original joblib model; no INT8 model is used.
+default benchmark compares it with the original joblib model. INT8 quantization
+reduces the classifier's weights to 8-bit integers; text preprocessing
+remains floating point. INT8 is not deployed by the API.
 
 Run these commands from `Milestone-2/backend/`:
 ```bash
@@ -412,8 +417,19 @@ python optimize/export_onnx.py     # writes ../model/model_fp32.onnx
 python optimize/benchmark.py --n 500
 ```
 
+To build and benchmark INT8, run from the same directory:
+
+```bash
+python optimize/export_int8.py
+python optimize/benchmark.py --include-int8 --n 500
+```
+
+The INT8 export writes `optimize/model_int8.onnx`. The comparison with
+`--include-int8` writes `optimize/results_int8.json`.
+
 `benchmark.py` sends the same batch of 500 held-out tweets through the naive
-joblib and ONNX FP32 models. Each runs in its own subprocess and reports
+joblib, ONNX FP32, and ONNX INT8 models when `--include-int8` is enabled.
+Each runs in its own subprocess and reports
 average latency, throughput, process RSS after model load, on-disk size, and
 accuracy.
 
@@ -421,18 +437,24 @@ accuracy.
 
 | mode      | avg latency (ms) | throughput (qps) | RSS after load (MB) | size (KB) | accuracy |
 |-----------|-------------------|-------------------|-----------------------|-----------|----------|
-| naive (joblib)  | 0.299 | 3,341  | 154.1 | 227.5 | 0.856 |
-| ONNX FP32       | 0.032 | 31,157 | 171.1 | 160.1 | 0.858 |
+| naive (joblib)  | 0.5154 | 1,940  | 154.9 | 227.5 | 0.856 |
+| ONNX FP32       | 0.0560 | 17,866 | 170.3 | 160.1 | 0.858 |
+| ONNX INT8       | 0.0404 | 24,754 | 170.8 | 122.3 | 0.860 |
 
-Full numbers in `optimize/results.json`.
+Full numbers in `optimize/results_int8.json`. These are local, in-process
+inference timings, including text preprocessing; they exclude HTTP, cache,
+and database operations. Results depend on the runtime and hardware.
+
+On the full 1,523-post held-out set, FP32 and INT8 both achieved **87.92%
+accuracy**, with **99.87% agreement** between their predicted labels.
 
 **Takeaways:**
-- The ONNX export is the bigger win here: ~9x higher throughput than the
-  sklearn/joblib path, no accuracy loss.
-- RSS after load is slightly *higher* for the ONNX modes than naive — that's
-  fixed overhead from importing `onnxruntime` itself (numpy, protobuf, the
-  runtime's own allocator warmup), not the model. It dominates at this model
-  size; it wouldn't for a model large enough to actually stress memory.
+- ONNX FP32 achieved about **9.2x** the throughput of the sklearn/joblib path.
+- INT8 had about **28% lower latency** and a **24% smaller file** than FP32
+  in this run. This comparison includes the classifier graph rewrite used for
+  quantization, so it does not isolate the effect of integer weights alone.
+- Process RSS after loading was similar for FP32 and INT8, despite the smaller
+  INT8 file. RSS measures the whole process, including the inference runtime.
 
 ## System architecture
 
